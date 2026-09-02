@@ -353,12 +353,12 @@ def test_remove_soft_hyphen_and_cr():
 
 
 def test_hyphen_at_line_end_removed():
-    # "transfor-" 是第 7 个字符（index 7），其位置在线末；后接 \n
+    # "transfor-" 连字符在 index 8（行尾），后接 \n
     text = "transfor-\nmer"
-    s, m = n(text, line_ends={7})
+    s, m = n(text, line_ends={8})
     assert s == "transformer"
-    # 反查：norm 的 'r'（transfor…的末尾 r）应映射回原始 'r'（index 6）
-    assert m[8] == 6
+    # 归一化后 "transformer" 的 'm'（norm index 8）应映射回原始 'm'（index 10）
+    assert m[8] == 10
 
 
 def test_whitespace_collapse():
@@ -373,7 +373,7 @@ def test_fullwidth_fold():
 
 def test_map_monotonic_and_in_bounds():
     text = "Transfor-\nmer 2025 ﬁ"
-    s, m = n(text, line_ends={7})
+    s, m = n(text, line_ends={8})
     assert len(s) == len(m)
     assert all(0 <= x < len(text) for x in m)
     assert m == sorted(m)
