@@ -275,11 +275,14 @@ Line:
 - **能力令牌（capability token）**：文件在会话中首次被解析时铸一枚随机令牌（≥128bit），**`doc_id` 即该令牌**；所有伺服 URL 携带 `doc_id`；未知/失效令牌一律 404（进程重启后旧链接失效属预期，§10 有对应错误提示）。
 - **白名单** = 本进程铸过令牌的文件集合：按 `doc_id → 真实路径` 精确映射伺服，仅限"解析过且仍在缓存/指纹表中"的文件；不做目录列举；不跟随符号链接出白名单。
 - 路由：
-  - `/view?doc=<doc_id>&page=N&hl=<urlencoded rects>` → HTML 查看页
+  - `/view?doc=<doc_id>&page=N&hl=<urlencoded rects>` → HTML 查看页（内联矩形）
+  - `/view?doc=<doc_id>&page=N&hlid=<短随机 id>` → 同上（矩形数超过阈值时用；数据在内存映射里）
+  - `/hl/<hlid>` → 返回该 hlid 对应的矩形 JSON（供查看页二次获取）
   - `/pdf/<doc_id>` → 原始 PDF，`Content-Type: application/pdf`，只读
   - `/assets/…` → 打包的 pdf.js 静态资源（离线可用）
   - `/download/<doc_id>?spans=<urlencoded spans>` → 批注副本（attachment）
-- 查看页行为：pdf.js 打开 `/pdf/<token>`；`page=N` 定位；对 `hl=` 中该页矩形画半透明高亮层（可开关）；"上一处/下一处"按钮遍历全部 `hl` 矩形跨页跳转；页面标题显示 `path_display`。
+- `hl=` 内联 vs `hlid=`：默认内联；当矩形数 > 阈值（40）时，server 将矩形列表存入内存映射、URL 改用短随机 `hlid`，查看页经 `/hl/<hlid>` 取回同一份矩形——两者送达浏览器的矩形数据完全一致，仅传输通道不同；URL 恒短且无新持久状态。
+- 查看页行为：pdf.js 打开 `/pdf/<token>`；`page=N` 定位；对矩形列表（来自 `hl=` 或 `/hl/<hlid>`）中该页矩形画半透明高亮层（可开关）；"上一处/下一处"按钮遍历全部矩形跨页跳转；页面标题显示 `path_display`。
 - pdf.js 资源：随 Python 包分发 `pdfjs-dist`（构建版静态目录），不依赖 CDN。
 
 ## 9. 生命周期与清理（D6）
@@ -287,7 +290,7 @@ Line:
 | 对象 | 位置 | 产生时机 | 清理 |
 |---|---|---|---|
 | 批注副本 | 系统临时目录 `pdf-nl-search-mcp/` | `download_annotated` | 进程退出即清空（atexit/信号）+ TTL 24h 扫描 + 上限 20 份按最旧淘汰 |
-| 会话解析缓存 | 进程内存 | search 惰性解析 | LRU 容量上限（默认 ~200MB 文本，可配）；进程退出即失 |
+| 会话解析缓存 | 进程内存 | search 惰性解析 | LRU 内存预算（默认 1GB，可配）；进程退出即失 |
 | txt / 磁盘检索索引 | — | 永不产生 | — |
 
 约定：server 永不写回源文件所在目录、永不修改源文件；下载副本仅作临时载体，用户如需留存自行另存。
