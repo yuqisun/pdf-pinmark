@@ -133,21 +133,33 @@
   "highlight": "sentence"               // term | sentence | paragraph
 }
 ```
-输出：`results[]`，每项：
+输出（信封结构）：
 ```jsonc
 {
-  "doc_id": "u7s3…",            // 会话内稳定 id
-  "path_display": "a.pdf",
-  "page": 5,                     // 1-based
-  "offset_start": 12345, "offset_end": 12601,  // 全局字符偏移（原始流）
-  "snippet": "……transformer must be …",
-  "score": 8.3,
-  "terms_hit": ["transformer"],
-  "highlight_spans": [{"page":5,"offset_start":…,"offset_end":…}, …],
-  "view_url": "http://127.0.0.1:8765/view?doc=u7s3…&page=5&hl=…"
+  "results": [
+    {
+      "doc_id": "u7s3…",            // 会话内稳定 id（能力令牌）
+      "path_display": "a.pdf",
+      "page": 5,                     // 1-based
+      "offset_start": 12345, "offset_end": 12601,  // 全局字符偏移（原始流）
+      "snippet": "……transformer must be …",
+      "score": 8.3,
+      "terms_hit": ["transformer"],  // 本段落命中了哪些词
+      "highlight_spans": [{"page":5,"offset_start":…,"offset_end":…}, …],
+      "view_url": "http://127.0.0.1:8765/view?doc=u7s3…&page=5&hl=…"
+    }
+  ],
+  "max_score": 8.3,                  // 本次检索最高分（server 计算）
+  "term_hits": {                     // 每个检索词在 scope 内命中的段落数（server 统计）
+    "比亚迪": 0, "BYD": 0, "2025": 3, "营业收入": 0, "营收": 1, "revenue": 0
+  },
+  "files_parsed": 1                  // 本次实际解析/参与的文件数
 }
 ```
-约定：`highlight` 决定高亮范围（默认 sentence = 命中词所在句，若命中词跨句则取覆盖全部命中词的最短窗口；paragraph = 整段；term = 仅命中词矩形）。`view_url` 的 `hl=` 参数由服务端根据偏移与 `highlight` 模式计算，宿主**无需**关心矩形细节。
+约定：
+- `highlight` 决定高亮范围（默认 sentence = 命中词所在句，若命中词跨句则取覆盖全部命中词的最短窗口；paragraph = 整段；term = 仅命中词矩形）。
+- `view_url` 的 `hl=` 参数由服务端根据偏移与 `highlight` 模式计算，宿主**无需**关心矩形细节。
+- `term_hits` / `max_score` 是**纯可计算的命中统计**，用于让宿主自行判断"词表是否与语料用词对不上、是否该换词重试"。server **不产出任何建议性文本**（无 LLM 依赖）；是否换词、换什么词由宿主决定。
 
 ### 5.2 `get_more`
 取命中点周边更大连续文本（snippet 常被截断）。
