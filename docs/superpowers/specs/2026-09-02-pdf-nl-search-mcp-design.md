@@ -198,10 +198,12 @@ Line:
   text: str                        # 该行文本（原始字符）
   rect: (x0,y0,x1,y1)              # 行矩形（PDF 用户空间点）
   char_count: int                  # 惰性逐字符 bbox 的入口
-全局（随 ParsedDocument 构建）:
-  orig_chars: []                   # 原始字符序列（含 - \n 软连字符 ligature…）
-  norm_chars: []                   # 归一化字符序列（匹配用）
-  norm2orig: [norm_idx → orig_idx 列表或区间]   # 双向映射基础
+全局（随 ParsedDocument 构建，常驻量级仅此）:
+  orig_chars: 原始字符序列（按行紧凑存储，含 - \n 软连字符 ligature…）
+  line_index: 每行 → 全局偏移 的索引
+  paragraph_index: {页码, 全局偏移起止}
+注意：norm_chars（归一化流）与 norm2orig（双向映射）**不整体常驻**——
+按段落惰性构建、用完即弃（B 决策），避免全文档逐字符数组导致内存 O(字符数 × 36B)。
 ```
 
 ### 6.2 归一化规则
