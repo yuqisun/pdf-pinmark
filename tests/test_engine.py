@@ -26,3 +26,22 @@ def test_search_empty_returns_term_hits(tmp_path):
     res = s.search({"kind": "file", "path": str(p)}, ["比亚迪"], top_k=3, highlight="sentence")
     assert res["results"] == []
     assert res["term_hits"]["比亚迪"] == 0
+
+
+def test_cite_and_get_more(tmp_path):
+    p = make_pdf(tmp_path / "c.pdf", [["营业收入 9,328.5 亿元"], ["净利润 405.4 亿元"]])
+    s = _session(tmp_path)
+    doc_id, _ = s.get_or_parse(str(p))
+    matches = s.cite(doc_id, "营业收入 9,328.5 亿元")
+    assert len(matches) >= 1
+    assert matches[0]["page"] == 1
+    assert matches[0]["view_url"]
+    more = s.get_more(doc_id, 1, matches[0]["offset_start"], matches[0]["offset_end"])
+    assert "营业收入" in more["text"]
+
+
+def test_cite_quote_not_found(tmp_path):
+    p = make_pdf(tmp_path / "c2.pdf", [["hello"]])
+    s = _session(tmp_path)
+    doc_id, _ = s.get_or_parse(str(p))
+    assert s.cite(doc_id, "不存在的引文") == []

@@ -114,6 +114,77 @@ class Session:
             "truncated": truncated,
         }
 
+    def cite(self, doc_id, quote, page_hint=None):
+        doc = self.resolve(doc_id)
+        if doc is None:
+            return []
+        from .normalize import normalize_range
+        norm, n2o = normalize_range(doc.orig_text, 0, len(doc.orig_text), doc.line_ends)
+        q = quote.lower()
+        start = 0
+        out = []
+        while True:
+            i = norm.find(q, start)
+            if i < 0:
+                break
+            o0 = n2o[i]
+            o1 = n2o[i + len(q) - 1] + 1
+            pg = _page_1based(doc, o0)
+            if page_hint is None or pg == page_hint:
+                rects = highlight_rects(doc, o0, o1)
+                url, _ = self.make_view_url(doc_id, pg, rects)
+                name = os.path.basename(doc.path)
+                out.append({"page": pg, "offset_start": o0, "offset_end": o1,
+                            "snippet": doc.orig_text[o0:o1], "view_url": url,
+                            "citation": f"[《{name}》 p.{pg}]({url})"})
+            start = i + 1
+        return out
+
+    def get_more(self, doc_id, page, offset_start, offset_end, before=600, after=600):
+        doc = self.resolve(doc_id)
+        if doc is None:
+            return {"text": ""}
+        a = max(0, offset_start - before)
+        b = min(len(doc.orig_text), offset_end + after)
+        return {"text": doc.orig_text[a:b], "page": page, "start": a, "end": b}
+
+    def read_pages(self, doc_id, from_page, to_page, max_chars=None):
+        doc = self.resolve(doc_id)
+        if doc is None:
+            return []
+        out = []
+        for p in doc.pages:
+            if from_page - 1 <= p.page_no <= to_page - 1:
+                text = "\n".join(l.text for l in p.lines)
+                if max_chars:
+                    text = text[:max_chars]
+                out.append({"page": p.page_no + 1, "text": text})
+        return out
+
+    def list_documents(self, path, recursive=True):
+        import glob as _glob
+        pattern = path.rstrip("/\\") + "/**/*.pdf" if recursive else path + "/*.pdf"
+        return [{"path_display": os.path.basename(f), "path": f, "pages": None, "parsed": False}
+                for f in sorted(_glob.glob(pattern, recursive=recursive))]
+
+    def download_annotated(self, doc_id, spans):
+        import fitz
+        doc = self.resolve(doc_id)
+        if doc is None:
+            return {"error": "unknown doc_id"}
+        src = fitz.open(doc.path)
+        for span in spans:
+            rects = highlight_rects(doc, span["offset_start"], span["offset_end"])
+            for pno, rs in rects.items():
+                for r in rs:
+                    src[pno].add_highlight_annot(fitz.Rect(r))
+        data = src.tobytes()
+        src.close()
+        path, copy_id = self.tmp.add(data, ".pdf")
+        self.copy_store[copy_id] = path
+        return {"download_url": f"http://127.0.0.1:{self.http_port}/download/{copy_id}",
+                "temp_path": path, "retention_note": "24h 后或进程退出时清理"}
+
 
 def _page_1based(doc, offset):
     for p in doc.pages:
