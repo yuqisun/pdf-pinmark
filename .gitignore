@@ -1,0 +1,18 @@
+# 样例/语料 PDF（测试 fixture 由测试代码在运行时用 PyMuPDF 生成，无需入库）
+*.pdf
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+
+# Node（pdf.js 静态资源打包时可能用到）
+node_modules/
+
+# 系统
+.DS_Store
+Thumbs.db
