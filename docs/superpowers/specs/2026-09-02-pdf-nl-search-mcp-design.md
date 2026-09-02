@@ -110,9 +110,9 @@
 ### 4.3 下载批注副本（可选）
 
 ```
-宿主调用 download_annotated(doc, page, spans)
+宿主调用 download_annotated(doc_id, spans)
   → 临时目录：复制源文件 → PyMuPDF 按 spans 写高亮 annotation
-  → 返回临时文件 HTTP 下载 URL（Content-Disposition: attachment）
+  → 返回 /download/<copy_id> 下载 URL（Content-Disposition: attachment）
   → 副本进入三层清理管理（§9）
 ```
 
@@ -186,8 +186,8 @@
 
 ### 5.6 `download_annotated`
 按需生成带批注副本并返回下载 URL。
-输入：`{doc_id, spans:[{page, offset_start, offset_end}], mode: term|sentence|paragraph}`。
-输出：`{download_url, temp_path 提示, retention_note}`。
+输入：`{doc_id, spans:[{page, offset_start, offset_end}]}`（spans 直接取自 search 的 `highlight_spans` 或 cite 的定位，已是最终偏移区间）。
+输出：`{download_url, temp_path 提示, retention_note}`；副本于**工具调用时**生成，`download_url` 形如 `/download/<copy_id>`。
 
 ### 5.7 输出约定
 - 每条结果同时给 `view_url`（裸 URL）与 `citation`（server 拼好的 markdown 链接 `[《文件名》 p.页](url)`）；宿主直接嵌入 `citation` 即可，纯文本终端用 `view_url` 复制打开。
@@ -282,7 +282,7 @@ Line:
   - `/hl/<hlid>` → 返回该 hlid 对应的矩形 JSON（供查看页二次获取）
   - `/pdf/<doc_id>` → 原始 PDF，`Content-Type: application/pdf`，只读
   - `/assets/…` → 打包的 pdf.js 静态资源（离线可用）
-  - `/download/<doc_id>?spans=<urlencoded spans>` → 批注副本（attachment）
+  - `/download/<copy_id>` → 批注副本（attachment；copy_id 为工具调用时铸的副本能力令牌）
 - `hl=` 内联 vs `hlid=`：默认内联；当矩形数 > 阈值（40）时，server 将矩形列表存入内存映射、URL 改用短随机 `hlid`，查看页经 `/hl/<hlid>` 取回同一份矩形——两者送达浏览器的矩形数据完全一致，仅传输通道不同；URL 恒短且无新持久状态。
 - 查看页行为：pdf.js 打开 `/pdf/<token>`；`page=N` 定位；对矩形列表（来自 `hl=` 或 `/hl/<hlid>`）中该页矩形画半透明高亮层（可开关）；"上一处/下一处"按钮遍历全部矩形跨页跳转；页面标题显示 `path_display`。
 - pdf.js 资源：随 Python 包分发 `pdfjs-dist`（构建版静态目录），不依赖 CDN。
