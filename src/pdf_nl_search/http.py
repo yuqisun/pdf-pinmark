@@ -74,8 +74,8 @@ def make_handler(session):
 
 
 def _render_viewer(doc, page, hl, hlid):
-    return f"""<!doctype html><html><head><meta charset="utf-8"><title>PDF 高亮查看</title></head>
-<body><div id="app">正在加载…</div>
-<script type="module" src="/assets/viewer.js"></script>
-<script>window.__VIEW={{"doc":{json.dumps(doc)},"page":{page},"hl":{json.dumps(hl)},"hlid":{json.dumps(hlid)}}};</script>
-</body></html>"""
+    assets_dir = os.path.join(os.path.dirname(__file__), "assets")
+    with open(os.path.join(assets_dir, "viewer.html"), "r", encoding="utf-8") as f:
+        html = f.read()
+    cfg = json.dumps({"doc": doc, "page": int(page), "hl": hl, "hlid": hlid})
+    return html.replace("__VIEW_CONFIG__", cfg)

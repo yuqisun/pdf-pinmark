@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF 高亮查看</title>
+</head>
+<body style="margin:0;font-family:system-ui,sans-serif;background:#333">
+  <div style="padding:6px 10px;background:#222;color:#fff;display:flex;gap:8px;align-items:center">
+    <button id="prev" style="cursor:pointer">&larr; 上一处</button>
+    <button id="next" style="cursor:pointer">下一处 &rarr;</button>
+    <span id="pageinfo" style="margin-left:auto;font-size:13px"></span>
+  </div>
+  <div id="scroll" style="position:relative;overflow:auto;height:calc(100vh - 40px)">
+    <canvas id="cv"></canvas>
+    <div id="hl" style="position:absolute;top:0;left:0;pointer-events:none"></div>
+  </div>
+  <script>window.__VIEW = __VIEW_CONFIG__;</script>
+  <script type="module" src="/assets/viewer.js"></script>
+</body>
+</html>
