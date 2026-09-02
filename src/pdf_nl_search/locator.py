@@ -41,7 +41,7 @@ def _page_char_boxes(doc, page_no):
     try:
         p = d[page_no]
         boxes = []
-        for block in p.get_text("rawdict", sort=True)["blocks"]:
+        for block in p.get_text("rawdict")["blocks"]:
             if block.get("type") != 0:
                 continue
             for ln in block["lines"]:

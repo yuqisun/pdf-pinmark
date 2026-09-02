@@ -72,6 +72,11 @@ Windows 上 `uv` 若不在 PATH，可写绝对路径（如 `C:\\Users\\<you>\\.l
 - `list_documents(path, recursive)` —— 列目录内 PDF
 - `download_annotated(doc_id, spans)` —— 生成带批注副本并下载
 
+## 性能说明
+
+- 首次搜索一个文件时需**按需解析**（无预建索引，这是设计选择）：小/中 PDF 秒级；**带嵌入 CJK 字体的大 PDF（如 33MB 年报）首次解析较慢**（PyMuPDF 逐字符提取坐标是瓶颈），解析结果在会话内存缓存，后续搜索很快。
+- 已记录的未来优化：改用 `get_text("words")` 模式快速重建行（经验证与 `text` 模式逐行一致），配合词级高亮可把大 PDF 解析提速约 1000 倍。
+
 ## 测试
 
 ```bash

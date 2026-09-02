@@ -12,7 +12,7 @@ def parse(path: str, fingerprint: str = "") -> ParsedDocument:
             page = d[pno]
             lines: list[Line] = []
             page_global_start = cursor
-            data = page.get_text("dict", sort=True)
+            data = page.get_text("dict")
             for block in data["blocks"]:
                 if block.get("type") != 0:
                     continue
