@@ -146,7 +146,8 @@
       "score": 8.3,
       "terms_hit": ["transformer"],  // 本段落命中了哪些词
       "highlight_spans": [{"page":5,"offset_start":…,"offset_end":…}, …],
-      "view_url": "http://127.0.0.1:8765/view?doc=u7s3…&page=5&hl=…"
+      "view_url": "http://127.0.0.1:8765/view?doc=u7s3…&page=5&hl=…",
+      "citation": "[《a.pdf》 p.5](http://127.0.0.1:8765/view?doc=u7s3…&page=5&hl=…)"  // 拼好的 markdown 引用
     }
   ],
   "max_score": 8.3,                  // 本次检索最高分（server 计算）
@@ -166,7 +167,7 @@
 宿主在 `get_more`/`read_pages` 之后，若最终答案落在与 `search` 命中**不同的位置**，用它把"答案真正出处"定位并要一个高亮链接。
 输入：`{doc_id, quote, page_hint?}`，其中 `quote` 为宿主从结果里**原样抄回的一小段原文**。
 行为：server 对该文档做精确（归一化）子串匹配。
-输出：`matches[]`，每项 `{page, offset_start, offset_end, snippet, view_url}`；同一引文出现多次时**返回全部候选**（各带页码与 view_url），由宿主自行选择正确的一个；`page_hint` 可选，用于收窄（如"营业收入"逐页出现时指定某页）。
+输出：`matches[]`，每项 `{page, offset_start, offset_end, snippet, view_url, citation}`；同一引文出现多次时**返回全部候选**（各带页码与 view_url），由宿主自行选择正确的一个；`page_hint` 可选，用于收窄（如"营业收入"逐页出现时指定某页）。
 生成的高亮即这段引文本身（等价 term 模式的精确高亮）。
 
 ### 5.3 `get_more`
@@ -189,7 +190,8 @@
 输出：`{download_url, temp_path 提示, retention_note}`。
 
 ### 5.7 输出约定
-- `view_url` 一律给出 markdown 链接 + 可复制的裸 URL 两行，兼容可点击与纯文本终端。
+- 每条结果同时给 `view_url`（裸 URL）与 `citation`（server 拼好的 markdown 链接 `[《文件名》 p.页](url)`）；宿主直接嵌入 `citation` 即可，纯文本终端用 `view_url` 复制打开。
+- 多个出处按断言逐条列 `citation`，不把链接堆在文末。
 - 错误信息结构化（`{error: {code, message, hint}}`），不裸抛堆栈。
 
 ## 6. 归一化与匹配引擎（D4 核心）
