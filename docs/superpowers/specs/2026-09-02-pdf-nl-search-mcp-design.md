@@ -305,12 +305,17 @@ Line:
 
 ## 10. 错误处理
 
-- 文件不存在/被移动/权限不足：错误码 `file_unavailable`，hint 建议重新 `list_documents`。
+原则：所有错误结构化 `{error: {code, message, hint}}`，不裸抛堆栈；分两类通道——**工具调用错误**经 MCP JSON-RPC 返回给宿主，**HTTP 错误**（浏览器点链接）返回友好错误页/404。
+
+- 文件不存在/被移动/权限不足：`file_unavailable`，hint 建议重新 `list_documents`。
+- scope/参数错误（`kind` 与路径不符、`top_k≤0`、`spans` 偏移越界、`page_hint` 超页数）：`invalid_args`，message 点明具体参数。
 - 加密 PDF（有 owner/user 密码）：`pdf_encrypted`；空密码可解则透明处理并提示。
 - 损坏/非 PDF：`pdf_unparseable`。
 - 无文字层（扫描版）：`no_text_layer`，明确不支持 OCR。
-- 会话重启后旧 URL token 失效：错误码 `token_expired`，提示重新搜索获取新链接。
+- 会话重启后旧 URL token 失效：`token_expired`，提示重新搜索获取新链接。
+- `cite` 引文未匹配到原文（宿主抄错/归一化差异）：`quote_not_found`，hint 提示核对引文或改用 `read_pages`。
 - 单文件解析超限（超大 PDF）或内存逼近上限：先降级为页级抽取，仍不足则报 `resource_limit`。
+- 目录搜索中单个坏文件只跳过计数（`files_skipped`），不中断整次搜索。
 
 ## 11. 测试策略
 
