@@ -818,12 +818,12 @@ def _doc(path, nchars):
 
 
 def test_hit_and_eviction():
-    c = SessionCache(char_budget=10)  # 极小预算强制淘汰
+    c = SessionCache(char_budget=12)  # 4+4+8=16 超预算，淘汰最旧 /a 后 12≤12 停，保留 /b
     c.put("/a", 1, 100, "h1", _doc("/a", 4))
     c.put("/b", 2, 200, "h2", _doc("/b", 4))
     assert c.get("/a", 1, 100) is not None
     assert c.get("/b", 2, 200) is not None
-    c.put("/c", 3, 300, "h3", _doc("/c", 8))  # 超出预算，淘汰最久未用的 /a
+    c.put("/c", 3, 300, "h3", _doc("/c", 8))  # 超预算，淘汰最久未用的 /a
     assert c.get("/a", 1, 100) is None
     assert c.get("/b", 2, 200) is not None
 
@@ -869,8 +869,8 @@ class SessionCache:
         self._total += len(doc.orig_text)
         self._map.move_to_end(path)
         while self._total > self._budget and self._map:
-            oldest, _ = self._map.popitem(last=False)
-            self._drop(oldest)
+            _, entry = self._map.popitem(last=False)
+            self._total -= entry["chars"]
 
     def _drop(self, path: str):
         e = self._map.pop(path, None)
