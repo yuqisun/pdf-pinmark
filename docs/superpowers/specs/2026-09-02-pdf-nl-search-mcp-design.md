@@ -324,12 +324,27 @@ Line:
 ## 12. 部署与接入
 
 - 运行：Python 3.10+；`uv` 项目管理；依赖：`mcp`、`PyMuPDF`；pdf.js 静态资源打包。
-- MCP 客户端配置示例：
-  - Claude Code：`.mcp.json` → `"command": "uv", "args": ["run", "pdf-nl-search-mcp"]`
-  - opencode：`opencode.json` mcp 段，同上 stdio 配置
-  - VSCode：`.mcp.json` 同结构
+- 传输：stdio；**stdout 仅走 JSON-RPC，日志一律去 stderr 或文件**（避免污染协议）。
+- 本地 HTTP 端口：启动时取随机空闲端口（不可配，无固定端口需求）。
+- 环境变量（均有默认值，零配置即可用）：
+
+| 环境变量 | 默认 | 用途 |
+|---|---|---|
+| `PDFNL_CACHE_MB` | 1024 | 会话解析缓存内存预算（LRU 上限，§3） |
+| `PDFNL_SEARCH_LIMIT` | 20000000（字符） | 单次 `search` 的解析上限（目录搜索超限即 `truncated=true`，§5.1） |
+| `PDFNL_LOG_LEVEL` | info | 日志级别（写 stderr），调试用 |
+| `PDFNL_TMP_DIR` | 系统临时目录 | 批注副本存放目录（§9，几乎无需改） |
+
+- MCP 客户端配置示例（三端同 schema，`env` 字段注入环境变量）：
+  ```jsonc
+  // Claude Code: .mcp.json
+  { "mcpServers": { "pdf-nl-search": {
+      "command": "uv", "args": ["run", "pdf-nl-search-mcp"],
+      "env": { "PDFNL_CACHE_MB": "1024" } } } }
+  // opencode: opencode.json 的 mcp 段；VSCode(Copilot/Cline/Continue): .mcp.json —— 同结构
+  ```
 - 首次使用无索引构建步骤：语料即用户机器上任意路径，搜索时按 scope 惰性解析。
-- Windows 注意：路径统一绝对路径；URL 编码路径；pdf.js 本地伺服无跨域问题。
+- Windows 注意：`uv` 可能写作 `uv.exe`（或用绝对路径）；路径统一绝对路径；URL 编码路径；pdf.js 本地伺服无跨域问题。
 
 ## 13. 超出范围（YAGNI）
 
