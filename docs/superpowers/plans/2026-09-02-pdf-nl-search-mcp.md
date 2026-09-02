@@ -534,7 +534,7 @@ def find_terms(norm_text: str, term: str, cjk: bool) -> list[tuple[int, int]]:
     pat = re.escape(term)
     if not cjk:
         pat = r"(?<![A-Za-z0-9])" + pat + r"(?![A-Za-z0-9])"
-    return [m.span() for m in re.finditer(pat, norm_text)]
+    return [m.span() for m in re.finditer(pat, norm_text, flags=re.IGNORECASE)]
 
 
 def fallback_terms(query: str) -> list[str]:
