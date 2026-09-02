@@ -320,10 +320,11 @@ Line:
 ## 11. 测试策略
 
 - **单元（引擎，最高优先）**：归一化与映射——fixtures 覆盖：断词连字符、跨行短语、跨页短语、中文子串、ligature、软连字符、全角、双栏行序、词边界防误命中（form/transform）。属性：任意归一化位置反查原始区间不越界、顺序单调。
-- **单元（打分）**：多词加权、IDF、邻近加成、同分稳定排序。
+- **单元（打分）**：多词加权、IDF、邻近加成、同分稳定排序；页上下文微加成的回归 fixture 见 §6.4（散文句排序不变、表格行进 top-k、页眉页脚不注噪）。
+- **单元（cite）**：`quote` 命中；`quote_not_found`（故意抄错引文报对码）；`page_hint` 收窄；同一引文多处出现时返回全部候选。
 - **单元（HTTP/清理）**：token 鉴权、白名单外 404、TTL/上限淘汰逻辑（用短 TTL 注入测试）。
-- **集成**：PyMuPDF 生成受控测试 PDF（含断词/跨页/中文/双栏样例）→ search 命中并核对 page/offset；`/view` 页面用无头浏览器冒烟（可选）；`download_annotated` 产物用 PyMuPDF 复核 annotation 数量与 rect。
-- **端到端**：经 mcp Python SDK 以 stdio 调用全工具链。
+- **集成**：PyMuPDF 生成受控测试 PDF（含断词/跨页/中文/双栏样例，以及**已知坐标的文本**）→ search 命中并核对 page/offset；**断言高亮矩形落在预期行/范围内**（不只"有 rect"）；`/view` 页面用无头浏览器冒烟（可选）；`download_annotated` 产物用 PyMuPDF 复核 annotation 数量与 rect。
+- **端到端**：经 mcp Python SDK 以 stdio 调用全工具链（含 `cite`）。
 - **性能**：解析吞吐基线（页/秒）、千页 PDF 首次搜索耗时、命中生成高亮耗时（目标：千页内首次搜索 < 5s，命中→高亮 < 1s，不满足则记录为优化项）。
 
 ## 12. 部署与接入
