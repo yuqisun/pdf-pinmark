@@ -18,3 +18,29 @@ def _mkdir(self, mode=0o777, parents=False, exist_ok=False):
 
 
 pathlib.Path.mkdir = _mkdir
+
+
+import fitz
+import pytest
+
+
+def make_pdf(path, page_lines):
+    """page_lines: list[list[str]]，每项一页，每项是若干行文本。"""
+    doc = fitz.open()
+    for lines in page_lines:
+        page = doc.new_page(width=595, height=842)
+        y = 72
+        for text in lines:
+            # 用内置中文字体，否则中文会被默认 Helvetica 抽成无效字符
+            page.insert_text((72, y), text, fontsize=12, fontname="china-s")
+            y += 20
+    doc.save(str(path))
+    doc.close()
+    return path
+
+
+@pytest.fixture
+def sample_pdf(tmp_path):
+    p = tmp_path / "sample.pdf"
+    return make_pdf(p, [["2025 年，比亚迪实现营业收入约 9,328.5 亿元。", "其中汽车业务收入占比较高。"],
+                        ["This is the transfor-", "mer must be highlighted."]])
