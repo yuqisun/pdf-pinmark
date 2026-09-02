@@ -332,6 +332,9 @@ Line:
 ## 12. 部署与接入
 
 - 运行：Python 3.10+；`uv` 项目管理；依赖：`mcp`、`PyMuPDF`；pdf.js 静态资源打包。
+- **分发形态（双轨）**：
+  - **源码 + uv（主）**：同事 `git clone` → `uv sync` → 配置 `uv run pdf-nl-search-mcp`；成熟后发布 PyPI/私有制品库，同事改 `uv tool install pdf-nl-search-mcp`。同事仅需装 uv（uv 自动管理 Python 3.10+）。
+  - **独立可执行文件（可选）**：PyInstaller 打包，供不愿装 uv 的同事零环境使用；三平台分别构建、体积较大，pdf.js 静态资源一并内嵌。
 - 传输：stdio；**stdout 仅走 JSON-RPC，日志一律去 stderr 或文件**（避免污染协议）。
 - 本地 HTTP 端口：启动时取随机空闲端口（不可配，无固定端口需求）。
 - 环境变量（均有默认值，零配置即可用）：
