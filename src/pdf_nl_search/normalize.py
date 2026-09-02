@@ -9,10 +9,14 @@ def normalize_range(orig_text: str, start: int, end: int, line_ends: set) -> tup
     i = start
     while i < end:
         c = orig_text[i]
-        # 规则4：行尾 '-' + 换行（英文断词）
-        if c == "-" and i in line_ends and i + 1 < end and orig_text[i + 1] == "\n":
-            i += 2
-            continue
+        # 规则4：行尾 '-' + 换行（英文断词；须前一字符非空白，区分破折号）
+        if c == "-" and i in line_ends and (i == start or not orig_text[i - 1].isspace()):
+            if i + 2 < end and orig_text[i + 1] == "\r" and orig_text[i + 2] == "\n":
+                i += 3
+                continue
+            if i + 1 < end and orig_text[i + 1] == "\n":
+                i += 2
+                continue
         # 规则3：软连字符/零宽/CR
         if c in ZERO_WIDTH or c == "\u00ad" or c == "\r":
             i += 1

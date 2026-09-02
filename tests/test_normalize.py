@@ -30,6 +30,19 @@ def test_hyphen_at_line_end_removed():
     assert m[8] == 10
 
 
+def test_hyphen_with_crlf_removed():
+    text = "transfor-\r\nmer"
+    s, m = n(text, line_ends={8})
+    assert s == "transformer"
+    assert m[8] == 11
+
+
+def test_dash_after_space_kept():
+    text = "word -\nnext"
+    s, _ = n(text, line_ends={5})
+    assert s == "word - next"
+
+
 def test_whitespace_collapse():
     s, _ = n("a \t\n  b")
     assert s == "a b"
