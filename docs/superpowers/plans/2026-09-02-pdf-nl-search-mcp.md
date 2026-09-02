@@ -1880,12 +1880,12 @@ def make_tools(session):
 # src/pdf_nl_search/server.py
 import logging
 import sys
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer  # mcp 2.x：FastMCP 已改名 MCPServer
 from .config import load
 from .session import Session
 from .tools import make_tools
 
-mcp = FastMCP("pdf-nl-search")
+mcp = MCPServer("pdf-nl-search")
 _session = None
 _tools = {}
 
