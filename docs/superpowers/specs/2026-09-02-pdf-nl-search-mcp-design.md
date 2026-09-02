@@ -47,7 +47,7 @@
 │  pdf-nl-search-mcp（Python 进程，一个进程内两套服务）                │
 │                                                                    │
 │  ┌─ MCP 工具层 ──────────────────────────────────────────────┐   │
-│  │ search / get_more / read_pages / list_documents           │   │
+│  │ search / cite / get_more / read_pages / list_documents    │   │
 │  │ download_annotated                                        │   │
 │  └──────────────┬────────────────────────────────────────────┘   │
 │                 ▼                                                  │
@@ -162,26 +162,33 @@
 - `term_hits` / `max_score` 是**纯可计算的命中统计**，用于让宿主自行判断"词表是否与语料用词对不上、是否该换词重试"。server **不产出任何建议性文本**（无 LLM 依赖）；是否换词、换什么词由宿主决定。
 - `search` 工具说明中写入**静态行为契约**（工具描述文本，非运行时建议）：对数值/事实类问题，宿主在作答前应先以 `get_more` / `read_pages` 核对口径、单位、年份，再引用结果。
 
-### 5.2 `get_more`
+### 5.2 `cite`
+宿主在 `get_more`/`read_pages` 之后，若最终答案落在与 `search` 命中**不同的位置**，用它把"答案真正出处"定位并要一个高亮链接。
+输入：`{doc_id, quote, page_hint?}`，其中 `quote` 为宿主从结果里**原样抄回的一小段原文**。
+行为：server 对该文档做精确（归一化）子串匹配。
+输出：`matches[]`，每项 `{page, offset_start, offset_end, snippet, view_url}`；同一引文出现多次时**返回全部候选**（各带页码与 view_url），由宿主自行选择正确的一个；`page_hint` 可选，用于收窄（如"营业收入"逐页出现时指定某页）。
+生成的高亮即这段引文本身（等价 term 模式的精确高亮）。
+
+### 5.3 `get_more`
 取命中点周边更大连续文本（snippet 常被截断）。
 输入：`{doc_id, page, offset_start, offset_end, context_chars_before/after 默认 600}`。
-输出：`{text, page, start/end, 若跨页则返回 pages[]}`。
+输出：`{text, page, start/end, 若跨页则返回 pages[]}`（各页附带页码与偏移，便于宿主随后 `cite`）。
 
-### 5.3 `read_pages`
+### 5.4 `read_pages`
 通读指定页区间原文（小文件/低召回时的最强兜底）。
 输入：`{doc_id 或 path, from_page, to_page, max_chars?}`。
-输出：按页分组的纯文本。
+输出：按页分组的纯文本，每页附带页码（偏移可按需附带）。
 
-### 5.4 `list_documents`
+### 5.5 `list_documents`
 列出 scope 内可检索 PDF。
 输入：`{path, recursive}`；输出：`[{path_display, pages?, parsed: bool}]`（未解析文件 pages 可为 null，避免触发解析）。
 
-### 5.5 `download_annotated`
+### 5.6 `download_annotated`
 按需生成带批注副本并返回下载 URL。
 输入：`{doc_id, spans:[{page, offset_start, offset_end}], mode: term|sentence|paragraph}`。
 输出：`{download_url, temp_path 提示, retention_note}`。
 
-### 5.6 输出约定
+### 5.7 输出约定
 - `view_url` 一律给出 markdown 链接 + 可复制的裸 URL 两行，兼容可点击与纯文本终端。
 - 错误信息结构化（`{error: {code, message, hint}}`），不裸抛堆栈。
 
