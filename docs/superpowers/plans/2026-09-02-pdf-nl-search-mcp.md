@@ -120,6 +120,9 @@ dependencies = ["mcp>=1.2.0", "PyMuPDF>=1.24.0"]
 [project.scripts]
 pdf-nl-search-mcp = "pdf_nl_search.server:main"
 
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
