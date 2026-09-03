@@ -73,6 +73,14 @@ def search_document(doc, weights, top_k, highlight):
     for para, hits in per_para.values():
         s = score_paragraph(args, hits)
         scored.append((s, para, hits))
+    # 页上下文微加成（v1.5）：表格页里"数字"与"标签"分属不同段落，各自单词命中分很低；
+    # 把同页其它命中的信号借一点过来，让表格页整体上浮。
+    page_signal = {}
+    for s, para, _h in scored:
+        page_signal[para.page_no] = page_signal.get(para.page_no, 0.0) + s
+    LAMBDA = 0.35
+    scored = [(s + LAMBDA * page_signal.get(para.page_no, 0.0), para, hits)
+              for s, para, hits in scored]
     scored.sort(key=lambda x: (-x[0], x[1].page_no, x[1].start))
     term_hits = {t: df.get(t, 0) for t in weights}
     return scored[:top_k], term_hits, max((s for s, _, _ in scored), default=0.0)
