@@ -58,7 +58,7 @@ class Session:
         snippet = doc.orig_text[spans[0][0]:spans[0][1]][:500]
         return {
             "doc_id": doc_id, "path_display": name, "page": page,
-            "offset_start": para.start, "offset_end": para.end,
+            "offset_start": spans[0][0], "offset_end": spans[0][1],
             "snippet": snippet, "score": round(score, 2),
             "terms_hit": sorted(thits),
             "highlight_spans": [{"page": _page_1based(doc, s), "offset_start": s, "offset_end": e} for s, e in spans],

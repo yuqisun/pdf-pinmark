@@ -32,6 +32,7 @@ def search(scope: dict, terms: list = None, top_k: int = 10, highlight: str = "s
 @mcp.tool()
 def cite(doc_id: str, quote: str, page_hint: int = None) -> dict:
     """把一小段原文重新定位，返回该片段的可点击高亮链接（citation）。
+    quote 应尽量短（关键句/词组），不要整段/整页引用。
     当通过 read_pages/get_more 读到答案位置、需要给用户一个精确出处链接时调用它。"""
     _, tools = _ensure()
     return tools["cite"](doc_id, quote, page_hint)
