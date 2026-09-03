@@ -30,21 +30,71 @@ python scripts/fetch_pdfjs.py
 
 ## 配置 MCP 客户端
 
-Claude Code（`.mcp.json`）、opencode（`opencode.json` 的 mcp 段）、VSCode（Copilot/Cline/Continue 的 `.mcp.json`）三端同结构：
+先定位可执行入口，二选一（下面统一用控制台脚本，`<项目路径>` 替换成你 clone 的实际路径，如 `D:\work\pdf-pinmark`）：
+
+- 控制台脚本：`<项目路径>\.venv\Scripts\pdf-nl-search-mcp.exe`（Windows）
+- venv python：`<项目路径>\.venv\Scripts\python.exe` + 参数 `-m pdf_nl_search`
+
+> 用绝对路径（而非 `uv run`）最省事：`uv run` 依赖启动时的工作目录与 PATH，绝对路径则始终可解析。
+
+### Claude Code
+
+项目级：在你要跑 `claude` 的目录放一个 `.mcp.json`：
 
 ```json
 {
   "mcpServers": {
     "pdf-nl-search": {
-      "command": "uv",
-      "args": ["run", "pdf-nl-search-mcp"],
+      "command": "D:\\work\\pdf-pinmark\\.venv\\Scripts\\pdf-nl-search-mcp.exe",
       "env": { "PDFNL_CACHE_MB": "1024" }
     }
   }
 }
 ```
 
-Windows 上 `uv` 若不在 PATH，可写绝对路径（如 `C:\\Users\\<you>\\.local\\bin\\uv.exe`）。
+用户级（任意目录可用）：
+
+```powershell
+claude mcp add pdf-nl-search "D:\work\pdf-pinmark\.venv\Scripts\pdf-nl-search-mcp.exe"
+```
+
+若该 CLI 版本对参数挑剔（如报 `unknown option`/`missing argument`），改用 `.mcp.json`，或直接编辑 `~/.claude.json` 的 `mcpServers` 字段。
+
+### opencode
+
+项目级 `opencode.json`（或全局 `~/.config/opencode/opencode.json`）：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "pdf-nl-search": {
+      "type": "local",
+      "command": ["D:\\work\\pdf-pinmark\\.venv\\Scripts\\pdf-nl-search-mcp.exe"],
+      "environment": { "PDFNL_CACHE_MB": "1024" },
+      "enabled": true
+    }
+  }
+}
+```
+
+### VSCode Copilot
+
+工作区级 `.vscode/mcp.json`：
+
+```json
+{
+  "servers": {
+    "pdf-nl-search": {
+      "type": "stdio",
+      "command": "D:\\work\\pdf-pinmark\\.venv\\Scripts\\pdf-nl-search-mcp.exe",
+      "env": { "PDFNL_CACHE_MB": "1024" }
+    }
+  }
+}
+```
+
+> 各客户端字段名随版本略有差异（`mcpServers` vs `servers`、`env` vs `environment`）；若加载不到，以对应客户端当前文档为准——核心是把 `command` 指向控制台脚本绝对路径、传输用 stdio。
 
 ## 环境变量
 
