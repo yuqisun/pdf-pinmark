@@ -45,3 +45,11 @@ def test_cite_quote_not_found(tmp_path):
     s = _session(tmp_path)
     doc_id, _ = s.get_or_parse(str(p))
     assert s.cite(doc_id, "不存在的引文") == []
+
+
+def test_cite_whitespace_insensitive(tmp_path):
+    # 引文不含空格也能命中含空格的原文（跨行引文场景）
+    p = make_pdf(tmp_path / "c3.pdf", [["营业收入 9,328.5 亿元"]])
+    s = _session(tmp_path)
+    doc_id, _ = s.get_or_parse(str(p))
+    assert len(s.cite(doc_id, "营业收入9,328.5亿元")) >= 1

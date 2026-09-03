@@ -1,4 +1,4 @@
-from .matcher import is_cjk_term, find_terms, fallback_terms
+from .matcher import is_cjk_term, find_terms, fallback_terms, cjk_variants
 from .normalize import normalize_range
 from .scorer import compute_idf, score_paragraph, ScoreArgs
 from .models import ParsedDocument
@@ -17,7 +17,10 @@ def _match_paragraph(doc, para, weights):
     hits = {}
     for term in weights:
         cjk = is_cjk_term(term)
-        spans = find_terms(norm, term.lower() if not cjk else term, cjk)
+        variants = cjk_variants(term) if cjk else [term]
+        spans = []
+        for v in variants:
+            spans.extend(find_terms(norm, v.lower() if not cjk else v, cjk))
         if spans:
             hits[term] = [(n2o[s], n2o[e - 1] + 1) for s, e in spans]  # 转回原文偏移
     return hits

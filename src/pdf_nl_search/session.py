@@ -121,27 +121,42 @@ class Session:
         doc = self.resolve(doc_id)
         if doc is None:
             return []
+        import re as _re
         from .normalize import normalize_range
+        from .matcher import cjk_variants
         norm, n2o = normalize_range(doc.orig_text, 0, len(doc.orig_text), doc.line_ends)
-        q = quote.lower()
-        start = 0
         out = []
-        while True:
-            i = norm.find(q, start)
-            if i < 0:
-                break
-            o0 = n2o[i]
-            o1 = n2o[i + len(q) - 1] + 1
-            pg = _page_1based(doc, o0)
-            if page_hint is None or pg == page_hint:
-                rects = highlight_rects(doc, o0, o1)
-                url, _ = self.make_view_url(doc_id, pg, {}, rects)
-                name = os.path.basename(doc.path)
-                out.append({"page": pg, "offset_start": o0, "offset_end": o1,
-                            "snippet": doc.orig_text[o0:o1], "view_url": url,
-                            "citation": f"[《{name}》 p.{pg}]({url})"})
-            start = i + 1
-        return out
+        for v in cjk_variants(quote.lower()):  # 简繁变体都尝试，简体引文可命中繁体原文
+            chars = _re.sub(r"\s+", "", v)
+            if not chars:
+                continue
+            # 空白不敏感：每字符间允许任意空白（跨行引文与原文空格差异均可容忍）
+            pat = r"\s*".join(_re.escape(c) for c in chars)
+            start = 0
+            while True:
+                m = _re.search(pat, norm[start:])
+                if m is None:
+                    break
+                i = start + m.start()
+                o0 = n2o[i]
+                o1 = n2o[i + m.end() - m.start() - 1] + 1
+                pg = _page_1based(doc, o0)
+                if page_hint is None or pg == page_hint:
+                    rects = highlight_rects(doc, o0, o1)
+                    url, _ = self.make_view_url(doc_id, pg, {}, rects)
+                    name = os.path.basename(doc.path)
+                    out.append({"page": pg, "offset_start": o0, "offset_end": o1,
+                                "snippet": doc.orig_text[o0:o1], "view_url": url,
+                                "citation": f"[《{name}》 p.{pg}]({url})"})
+                start = i + 1
+        # 去重（同一位置可能被多个变体重复匹配）
+        deduped, seen = [], set()
+        for m in out:
+            key = (m["page"], m["offset_start"], m["offset_end"])
+            if key not in seen:
+                seen.add(key)
+                deduped.append(m)
+        return deduped
 
     def get_more(self, doc_id, page, offset_start, offset_end, before=600, after=600):
         doc = self.resolve(doc_id)
