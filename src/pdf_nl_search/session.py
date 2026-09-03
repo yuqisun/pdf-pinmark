@@ -146,19 +146,26 @@ class Session:
             return {"text": ""}
         a = max(0, offset_start - before)
         b = min(len(doc.orig_text), offset_end + after)
-        return {"text": doc.orig_text[a:b], "page": page, "start": a, "end": b}
+        name = os.path.basename(doc.path)
+        rects = highlight_rects(doc, offset_start, offset_end)
+        view_url, _ = self.make_view_url(doc_id, page, rects)
+        return {"text": doc.orig_text[a:b], "page": page, "start": a, "end": b,
+                "view_url": view_url, "citation": f"[《{name}》 p.{page}]({view_url})"}
 
     def read_pages(self, doc_id, from_page, to_page, max_chars=None):
         doc = self.resolve(doc_id)
         if doc is None:
             return []
+        name = os.path.basename(doc.path)
         out = []
         for p in doc.pages:
             if from_page - 1 <= p.page_no <= to_page - 1:
                 text = "\n".join(l.text for l in p.lines)
                 if max_chars:
                     text = text[:max_chars]
-                out.append({"page": p.page_no + 1, "text": text})
+                view_url, _ = self.make_view_url(doc_id, p.page_no + 1, {})
+                out.append({"page": p.page_no + 1, "text": text, "view_url": view_url,
+                            "citation": f"[《{name}》 p.{p.page_no + 1}]({view_url})"})
         return out
 
     def list_documents(self, path, recursive=True):
