@@ -16,3 +16,13 @@ node_modules/
 # 系统
 .DS_Store
 Thumbs.db
+
+# 本地 MCP 配置（含机器绝对路径，不入库；配置模板见 README）
+.mcp.json
+
+# pytest / 沙箱临时产物
+.pytest_cache/
+.pytest_tmp*/
+pytest-cache-files-*/
+probe0/
+_*.py
