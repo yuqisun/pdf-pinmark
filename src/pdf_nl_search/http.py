@@ -32,7 +32,8 @@ def make_handler(session):
                 if doc not in session.doc_by_id:
                     return self._send(404, b"link expired", "text/plain; charset=utf-8")
                 body = _render_viewer(doc, q.get("page", ["1"])[0],
-                                      q.get("hl", [""])[0], q.get("hlid", [""])[0])
+                                      q.get("hl", [""])[0], q.get("khl", [""])[0],
+                                      q.get("hlid", [""])[0])
                 return self._send(200, body.encode("utf-8"), "text/html; charset=utf-8")
             if u.path.startswith("/pdf/"):
                 doc = u.path[len("/pdf/"):]
@@ -73,9 +74,9 @@ def make_handler(session):
     return Handler
 
 
-def _render_viewer(doc, page, hl, hlid):
+def _render_viewer(doc, page, hl, khl, hlid):
     assets_dir = os.path.join(os.path.dirname(__file__), "assets")
     with open(os.path.join(assets_dir, "viewer.html"), "r", encoding="utf-8") as f:
         html = f.read()
-    cfg = json.dumps({"doc": doc, "page": int(page), "hl": hl, "hlid": hlid})
+    cfg = json.dumps({"doc": doc, "page": int(page), "hl": hl, "khl": khl, "hlid": hlid})
     return html.replace("__VIEW_CONFIG__", cfg)

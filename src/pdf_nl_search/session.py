@@ -39,14 +39,19 @@ class Session:
     def resolve(self, doc_id: str):
         return self.doc_by_id.get(doc_id)
 
-    def make_view_url(self, doc_id, page, rects):
-        hl = ";".join(f"{p+1}:{x0:.1f},{y0:.1f},{x1:.1f},{y1:.1f}"
-                      for p, rs in rects.items() for (x0, y0, x1, y1) in rs)
-        if len(hl) > 1500:
+    def make_view_url(self, doc_id, page, context_rects, term_rects):
+        hl = _encode_rects(context_rects)
+        khl = _encode_rects(term_rects)
+        if len(hl) + len(khl) > 1500:
             hlid = secrets.token_urlsafe(8)
-            self.hl_store[hlid] = rects
+            self.hl_store[hlid] = {"context": context_rects, "terms": term_rects}
             return f"http://127.0.0.1:{self.http_port}/view?doc={doc_id}&page={page}&hlid={hlid}", hlid
-        return f"http://127.0.0.1:{self.http_port}/view?doc={doc_id}&page={page}&hl={hl}", None
+        url = f"http://127.0.0.1:{self.http_port}/view?doc={doc_id}&page={page}"
+        if hl:
+            url += f"&hl={hl}"
+        if khl:
+            url += f"&khl={khl}"
+        return url, None
 
     def _make_hit(self, doc_id, doc, para, thits, score, spans, page, view_url):
         name = os.path.basename(doc.path)
@@ -94,11 +99,9 @@ class Session:
             for score, para, thits in hits:
                 spans = engine._highlight_spans(doc, para, thits, highlight)
                 first_page = _page_1based(doc, spans[0][0]) if spans else 1
-                rects = {}
-                for s0, s1 in spans:
-                    for pg, rs in highlight_rects(doc, s0, s1).items():
-                        rects.setdefault(pg, []).extend(rs)
-                view_url, _ = self.make_view_url(doc_id, first_page, rects)
+                context_rects = _rects_for(doc, [] if highlight == "term" else spans)
+                term_rects = _rects_for(doc, engine._term_spans(thits))
+                view_url, _ = self.make_view_url(doc_id, first_page, context_rects, term_rects)
                 results.append(self._make_hit(doc_id, doc, para, thits, score, spans, first_page, view_url))
             if hits:
                 per_file_top.append({"doc_id": doc_id, "path_display": os.path.basename(doc.path), "best_score": hits[0][0]})
@@ -132,7 +135,7 @@ class Session:
             pg = _page_1based(doc, o0)
             if page_hint is None or pg == page_hint:
                 rects = highlight_rects(doc, o0, o1)
-                url, _ = self.make_view_url(doc_id, pg, rects)
+                url, _ = self.make_view_url(doc_id, pg, {}, rects)
                 name = os.path.basename(doc.path)
                 out.append({"page": pg, "offset_start": o0, "offset_end": o1,
                             "snippet": doc.orig_text[o0:o1], "view_url": url,
@@ -148,7 +151,7 @@ class Session:
         b = min(len(doc.orig_text), offset_end + after)
         name = os.path.basename(doc.path)
         rects = highlight_rects(doc, offset_start, offset_end)
-        view_url, _ = self.make_view_url(doc_id, page, rects)
+        view_url, _ = self.make_view_url(doc_id, page, {}, rects)
         return {"text": doc.orig_text[a:b], "page": page, "start": a, "end": b,
                 "view_url": view_url, "citation": f"[《{name}》 p.{page}]({view_url})"}
 
@@ -163,7 +166,7 @@ class Session:
                 text = "\n".join(l.text for l in p.lines)
                 if max_chars:
                     text = text[:max_chars]
-                view_url, _ = self.make_view_url(doc_id, p.page_no + 1, {})
+                view_url, _ = self.make_view_url(doc_id, p.page_no + 1, {}, {})
                 out.append({"page": p.page_no + 1, "text": text, "view_url": view_url,
                             "citation": f"[《{name}》 p.{p.page_no + 1}]({view_url})"})
         return out
@@ -198,6 +201,19 @@ def _page_1based(doc, offset):
         if p.global_start <= offset < p.global_start + p.char_count + len(p.lines):
             return p.page_no + 1
     return 1
+
+
+def _encode_rects(rects):
+    return ";".join(f"{p+1}:{x0:.1f},{y0:.1f},{x1:.1f},{y1:.1f}"
+                    for p, rs in rects.items() for (x0, y0, x1, y1) in rs)
+
+
+def _rects_for(doc, spans):
+    rects = {}
+    for s0, s1 in spans:
+        for pg, rs in highlight_rects(doc, s0, s1).items():
+            rects.setdefault(pg, []).extend(rs)
+    return rects
 
 
 def _default_tmp():

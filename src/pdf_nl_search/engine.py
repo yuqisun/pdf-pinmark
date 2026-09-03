@@ -49,6 +49,11 @@ def _highlight_spans(doc, para, hits, mode):
     return windows
 
 
+def _term_spans(hits):
+    """命中词在原文中的偏移区间列表（所有命中，用于"关键词高亮"层）。"""
+    return [(s, e) for lst in hits.values() for s, e in lst]
+
+
 def search_document(doc, weights, top_k, highlight):
     N = len(doc.paragraphs)
     per_para = {}

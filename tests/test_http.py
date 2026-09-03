@@ -45,9 +45,9 @@ def test_known_doc_serves_pdf(tmp_path):
 
 def test_hl_route_roundtrip(tmp_path):
     s = Session(Config(1024, 10000, "info", str(tmp_path / "tmp")))
-    s.hl_store["abc"] = {0: [(1.0, 2.0, 3.0, 4.0)]}
+    s.hl_store["abc"] = {"context": {}, "terms": {0: [(1.0, 2.0, 3.0, 4.0)]}}
     port, srv = _serve(s)
     st, body = _get(f"http://127.0.0.1:{port}/hl/abc")
     assert st == 200
-    assert json.loads(body)["0"][0] == [1.0, 2.0, 3.0, 4.0]
+    assert json.loads(body)["terms"]["0"][0] == [1.0, 2.0, 3.0, 4.0]
     srv.shutdown()
