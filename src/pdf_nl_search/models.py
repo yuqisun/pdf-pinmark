@@ -9,6 +9,7 @@ class Line:
     rect: Rect
     global_start: int        # 首字符在 orig_text 中的偏移
     page_line_index: int     # 页内行序号（0-based）
+    words: list = field(default_factory=list)  # [(rect, start, end), ...] 每词矩形与全局偏移区间
 
 
 @dataclass
