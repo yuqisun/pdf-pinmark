@@ -159,16 +159,15 @@ class Session:
         doc = self.resolve(doc_id)
         if doc is None:
             return []
-        name = os.path.basename(doc.path)
         out = []
         for p in doc.pages:
             if from_page - 1 <= p.page_no <= to_page - 1:
                 text = "\n".join(l.text for l in p.lines)
                 if max_chars:
                     text = text[:max_chars]
-                view_url, _ = self.make_view_url(doc_id, p.page_no + 1, {}, {})
-                out.append({"page": p.page_no + 1, "text": text, "view_url": view_url,
-                            "citation": f"[《{name}》 p.{p.page_no + 1}]({view_url})"})
+                page_url, _ = self.make_view_url(doc_id, p.page_no + 1, {}, {})
+                # 注意：page_url 只是"跳到该页"的导航链接，无高亮，不作为引用出处
+                out.append({"page": p.page_no + 1, "text": text, "page_url": page_url})
         return out
 
     def list_documents(self, path, recursive=True):

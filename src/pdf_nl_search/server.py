@@ -22,8 +22,8 @@ def _ensure():
 @mcp.tool()
 def search(scope: dict, terms: list = None, top_k: int = 10, highlight: str = "sentence", query: str = "") -> dict:
     """按词表对 scope 内 PDF 做段落级检索。terms 应为语料语言的多语同义改写词表（含简繁/中英同义）。
-    每项结果的 `citation` 字段是可直接点击、在浏览器打开原文对应页并高亮命中处的完整链接——
-    回答中引用出处时，务必**原样使用 citation 里的链接**，不要用文件路径或自行构造链接。
+    每项结果的 `citation` 字段是可直接点击、在浏览器打开原文对应页并高亮命中处的完整链接（带上下文框+关键词高亮）——
+    回答中引用出处时，务必**原样使用 citation 里的链接**，不要用文件路径、read_pages 的 page_url 或自行构造链接。
     对数值/事实类问题，作答前先用 get_more/read_pages 核对口径、单位、年份再引用。"""
     _, tools = _ensure()
     return tools["search"](scope, terms or [], top_k, highlight, query)
@@ -49,7 +49,9 @@ def get_more(doc_id: str, page: int, offset_start: int, offset_end: int,
 
 @mcp.tool()
 def read_pages(doc_id: str, from_page: int, to_page: int, max_chars: int = None) -> dict:
-    """通读指定页区间原文，每页附带可点击引用链接（citation）。"""
+    """通读指定页区间原文（用于阅读理解）。每页返回 page_url（仅跳到该页、无高亮）。
+    最终答案引用出处时**不要用 page_url**：优先用 search 结果的 citation（带上下文框+关键词高亮）；
+    若答案来自这里读到的具体句子，调用 cite 传入该句子获取带高亮的 citation。"""
     _, tools = _ensure()
     return tools["read_pages"](doc_id, from_page, to_page, max_chars)
 
