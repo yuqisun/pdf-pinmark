@@ -20,6 +20,7 @@ def make_handler(session):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")  # 避免浏览器缓存旧的 viewer.js/view 页
             self.end_headers()
             self.wfile.write(body)
 
@@ -58,6 +59,7 @@ def make_handler(session):
                 self.send_header("Content-Type", "application/pdf")
                 self.send_header("Content-Disposition", "attachment")
                 self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "no-store")
                 self.end_headers()
                 self.wfile.write(body)
                 return
