@@ -50,15 +50,16 @@ async function renderPage(n) {
   const layer = document.getElementById("hl");
   layer.style.width = viewport.width + "px";
   layer.style.height = viewport.height + "px";
+  const scale = viewport.scale;
   for (const rect of mine) {
-    // PDF 用户空间坐标 → 当前缩放下的 viewport 坐标
-    const [x0, y0, x1, y1] = viewport.convertToViewportRectangle(rect);
+    // rect 是 PyMuPDF 坐标（左上原点、y 向下，单位 points）——直接乘 scale 得到 viewport 像素，勿翻转 y
+    const [x0, y0, x1, y1] = rect;
     const div = document.createElement("div");
-    div.style.cssText = "position:absolute;background:rgba(255,230,80,.45);mix-blend-mode:multiply;border:1px solid rgba(230,180,0,.7)";
-    div.style.left = x0 + "px";
-    div.style.top = y0 + "px";
-    div.style.width = (x1 - x0) + "px";
-    div.style.height = (y1 - y0) + "px";
+    div.style.cssText = "position:absolute;background:rgba(255,225,0,.55);mix-blend-mode:multiply;outline:2px solid rgba(255,140,0,.9);outline-offset:-2px;border-radius:1px";
+    div.style.left = (x0 * scale) + "px";
+    div.style.top = (y0 * scale) + "px";
+    div.style.width = ((x1 - x0) * scale) + "px";
+    div.style.height = ((y1 - y0) * scale) + "px";
     layer.appendChild(div);
   }
   const info = document.getElementById("pageinfo");
